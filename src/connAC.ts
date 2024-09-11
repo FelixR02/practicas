@@ -161,19 +161,24 @@ export const crearUsuarioDesdeSolicitante = async (req: Request, res: Response) 
         }
         username = `${username}${suffix}`;
       }
+       // Validar que el username no contenga caracteres no válidos
+    const invalidChars = /[,\=\+<>#;\\"]/;
+    if (invalidChars.test(username)) {
+      throw new Error(`El nombre de usuario contiene caracteres no válidos: ${username}`);
+    }
   
       // Objeto que representa al usuario en LDAP
       const user = {
-        cn: username,
-        sn: username,
-        uid: username,
-        mail: `${username}@uniss.edu.cu`,
+        cn: "Camilo",
+        sn: "German",
+        uid: "username",
+        /* mail: `${username}@uniss.edu.cu`, */
         objectClass: 'inetOrgPerson',
         userPassword: 'abcd.1234'
       };
-  
+  /* ${username} */
       // Especifica la DN donde se creará el usuario
-      const dn = `cn=${username},ou=Estudiantes,ou=Pruebas_informatizacion,ou=UNISS_Users,dc=uniss,dc=edu,dc=cu`;
+      const dn = `cn=Camilo,ou=Estudiantes,ou=Pruebas_informatizacion,ou=UNISS_Users,dc=uniss,dc=edu,dc=cu`;
   
       ldapClient.add(dn, user, async (err: any) => {
         if (err) {
