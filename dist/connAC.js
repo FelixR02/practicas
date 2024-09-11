@@ -16,14 +16,21 @@ const responsable_1 = require("./entities/responsable");
 const mailer_1 = require("./mailer"); // Importa la función para enviar correos
 const ldap = require('ldapjs');
 // Función para establecer la conexión LDAP
-const bindLDAP = (ldapClient) => __awaiter(void 0, void 0, void 0, function* () {
+const connectLDAP = () => __awaiter(void 0, void 0, void 0, function* () {
+    const ldapClient = ldap.createClient({
+        url: 'ldap://10.16.1.2',
+        baseDN: 'cn=ldap_connection,cn=Users,dc=uniss,dc=edu,dc=cu',
+        password: 'abcd.1234'
+    });
     return new Promise((resolve, reject) => {
         ldapClient.bind('cn=ldap_connection,cn=Users,dc=uniss,dc=edu,dc=cu', 'abcd.1234', (err) => {
             if (err) {
+                console.error("Error en bind:", err);
                 reject(err);
             }
             else {
-                resolve('Conexión exitosa con LDAP');
+                console.log('Conexión exitosa con LDAP');
+                resolve(ldapClient);
             }
         });
     });
@@ -40,53 +47,68 @@ const findSolicitanteById = (id) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 // Función para buscar usuarios en LDAP
-const buscarUsuario = (ldapClient, username) => {
-    return new Promise((resolve, reject) => {
-        const opts = {
-            filter: `(uid=${username})`,
-            scope: 'sub'
-        };
-        // Especifica la OU donde se realizará la búsqueda
-        ldapClient.search('ou=UNISS_Users,dc=uniss,dc=edu,dc=cu', opts, (err, res) => {
-            if (err) {
-                console.error("Error en la búsqueda:", err);
-                reject(false);
-                return;
-            }
-            let userExists = false;
-            res.on('searchEntry', (entry) => {
-                userExists = true;
-            });
-            res.on('end', () => {
-                resolve(userExists);
+const buscarUsuario = (ldapClient, username) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const opts = { filter: `(uid=${username})`, scope: 'sub' };
+        const baseDN = 'ou=Estudiantes,ou=UNISS_Users,dc=uniss,dc=edu,dc=cu'; // Asegúrate de que esta DN es correcta
+        return yield new Promise((resolve, reject) => {
+            ldapClient.search(baseDN, opts, (err, res) => {
+                if (err) {
+                    console.error("Error en la búsqueda:", err);
+                    reject(new Error(`Error en la búsqueda: ${err.message}`));
+                    return;
+                }
+                let userExists = false;
+                res.on('searchEntry', (entry) => {
+                    userExists = true;
+                });
+                res.on('error', (err) => {
+                    console.error("Error durante la búsqueda:", err);
+                    reject(new Error(`Error durante la búsqueda: ${err.message}`));
+                });
+                res.on('end', (result) => {
+                    if (result.status !== 0) {
+                        console.error("Error en el resultado de la búsqueda:", result);
+                        reject(new Error(`Error en el resultado de la búsqueda: ${result.status}`));
+                    }
+                    else {
+                        resolve(userExists);
+                    }
+                });
             });
         });
-    });
-};
+    }
+    catch (error) {
+        console.error("Error en buscarUsuario:", error);
+        throw new Error(`Error en buscarUsuario: ${error.message}`);
+    }
+});
 // Función para buscar un usuario en LDAP usando el nombre de usuario
 const buscarUsuarioEnLDAP = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username } = req.params;
-    // Crear el cliente LDAP solo cuando se necesita
-    const ldapClient = ldap.createClient({
-        url: 'ldap://10.16.1.2'
-    });
-    // Manejar el evento de error del cliente LDAP
-    ldapClient.on('error', (err) => {
-        console.error("Error al conectar con LDAP:", err);
-        res.status(500).json({ message: "Conexión al LDAP perdida", error: err.message });
-    });
     try {
-        const userExists = yield buscarUsuario(ldapClient, username);
-        if (userExists) {
-            res.status(200).json({ message: `Usuario ${username} encontrado en LDAP` });
+        const ldapClient = yield connectLDAP();
+        try {
+            const userExists = yield buscarUsuario(ldapClient, username);
+            if (userExists) {
+                res.status(200).json({ message: `Usuario ${username} encontrado en LDAP` });
+            }
+            else {
+                res.status(404).json({ message: `Usuario ${username} no encontrado en LDAP` });
+            }
         }
-        else {
-            res.status(404).json({ message: `Usuario ${username} no encontrado en LDAP` });
+        catch (error) {
+            console.error("Error al buscar el usuario en LDAP:", error);
+            res.status(500).json({ message: "Error al buscar el usuario en LDAP", error: error.message });
+        }
+        finally {
+            // Cerrar la conexión con el servidor LDAP
+            ldapClient.unbind();
         }
     }
     catch (error) {
-        console.error("Error al buscar el usuario en LDAP:", error);
-        res.status(500).json({ message: "Error al buscar el usuario en LDAP", error: error.message });
+        console.error("Error al conectar con LDAP:", error);
+        res.status(500).json({ message: "Error al conectar con LDAP", error: error.message });
     }
 });
 exports.buscarUsuarioEnLDAP = buscarUsuarioEnLDAP;
@@ -118,15 +140,7 @@ const crearUsuarioDesdeSolicitante = (req, res) => __awaiter(void 0, void 0, voi
             `${nombre_1.toLowerCase()}${apellido_1.toLowerCase()}${apellido_2.toLowerCase()}`,
             `${nombre_1.toLowerCase()}${nombre_2 ? nombre_2.toLowerCase() : ''}${apellido_1.toLowerCase()}${apellido_2.toLowerCase()}`
         ];
-        // Crear el cliente LDAP solo cuando se necesita
-        const ldapClient = ldap.createClient({
-            url: 'ldap://10.16.1.2'
-        });
-        // Manejar el evento de error del cliente LDAP
-        ldapClient.on('error', (err) => {
-            console.error("Error al conectar con LDAP:", err);
-            res.status(500).json({ message: "Conexión al LDAP perdida", error: err.message });
-        });
+        const ldapClient = yield connectLDAP();
         // Verificar si el usuario ya existe
         let userExists = false;
         let username = '';
@@ -144,14 +158,6 @@ const crearUsuarioDesdeSolicitante = (req, res) => __awaiter(void 0, void 0, voi
                 suffix++;
             }
             username = `${username}${suffix}`;
-        }
-        // Lógica para crear el usuario en LDAP
-        try {
-            yield bindLDAP(ldapClient);
-        }
-        catch (err) {
-            console.error("Error al conectar con LDAP:", err);
-            return res.status(500).json({ message: "Error al conectar con LDAP", error: err.message });
         }
         // Objeto que representa al usuario en LDAP
         const user = {
