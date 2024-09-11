@@ -9,11 +9,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.crearUsuarioDesdeSolicitante = exports.buscarUsuarioEnLDAP = void 0;
-const typeorm_1 = require("typeorm");
+exports.crearUsuarioDesdeSolicitante = exports.buscarUsuarioEnLDAP = exports.findSolicitanteById = void 0;
 const solicitante_1 = require("./entities/solicitante");
 const responsable_1 = require("./entities/responsable");
 const mailer_1 = require("./mailer"); // Importa la función para enviar correos
+const db_1 = require("./db");
 const ldap = require('ldapjs');
 // Función para establecer la conexión LDAP
 const connectLDAP = () => __awaiter(void 0, void 0, void 0, function* () {
@@ -37,15 +37,18 @@ const connectLDAP = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 // Función para obtener un solicitante desde la base de datos
 const findSolicitanteById = (id) => __awaiter(void 0, void 0, void 0, function* () {
-    const solicitanteRepository = (0, typeorm_1.getRepository)(solicitante_1.Solicitante);
     try {
-        const solicitante = yield solicitanteRepository.findOneOrFail({ where: { id } });
+        const solicitante = yield solicitante_1.Solicitante.findOneBy({ id });
         return solicitante;
     }
     catch (error) {
-        throw new Error(`Solicitante con ID ${id} no encontrado`);
+        if (error instanceof Error) {
+            throw new Error(error.message);
+        }
+        return null;
     }
 });
+exports.findSolicitanteById = findSolicitanteById;
 // Función para buscar usuarios en LDAP
 const buscarUsuario = (ldapClient, username) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -116,8 +119,11 @@ exports.buscarUsuarioEnLDAP = buscarUsuarioEnLDAP;
 const crearUsuarioDesdeSolicitante = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.body;
     try {
-        // Obtener datos del solicitante desde la base de datos
-        const solicitante = yield findSolicitanteById(Number(id));
+        // Obtener datos del solicitante desde la base de datos usando findSolicitanteById
+        const solicitante = yield (0, exports.findSolicitanteById)(Number(id));
+        if (!solicitante) {
+            return res.status(404).json({ message: `Solicitante con ID ${id} no encontrado` });
+        }
         const { nombre_1, nombre_2, apellido_1, apellido_2 } = solicitante;
         // Helper function to capitalize the first letter
         const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -169,8 +175,7 @@ const crearUsuarioDesdeSolicitante = (req, res) => __awaiter(void 0, void 0, voi
             userPassword: 'abcd.1234'
         };
         // Especifica la DN donde se creará el usuario
-        // Reemplaza 'YourOU' con la OU específica donde deseas crear el usuario
-        const dn = `cn=${username},ou=YourOU,dc=uniss,dc=edu,dc=cu`;
+        const dn = `cn=${username},ou=Estudiantes,ou=Pruebas_informatizacion,ou=UNISS_Users,dc=uniss,dc=edu,dc=cu`;
         ldapClient.add(dn, user, (err) => __awaiter(void 0, void 0, void 0, function* () {
             if (err) {
                 console.error("Error al crear el usuario en LDAP:", err);
@@ -179,7 +184,7 @@ const crearUsuarioDesdeSolicitante = (req, res) => __awaiter(void 0, void 0, voi
             else {
                 console.log(`Usuario creado en LDAP con username: ${username} y solicitanteId: ${solicitante.id}`);
                 // Obtener el email del responsable
-                const responsableRepository = (0, typeorm_1.getRepository)(responsable_1.Responsable);
+                const responsableRepository = db_1.AppDataSource.getRepository(responsable_1.Responsable);
                 const responsable = yield responsableRepository.findOne({ where: { id: solicitante.id } });
                 if (responsable) {
                     // Enviar correo al responsable

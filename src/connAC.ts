@@ -3,6 +3,7 @@ import { getRepository } from 'typeorm';
 import { Solicitante } from './entities/solicitante';
 import { Responsable } from './entities/responsable';
 import { enviarCorreo } from './mailer'; // Importa la función para enviar correos
+import { AppDataSource } from './db';
 const ldap = require('ldapjs');
 
 // Función para establecer la conexión LDAP
@@ -27,15 +28,17 @@ const connectLDAP = async () => {
 };
 
 // Función para obtener un solicitante desde la base de datos
-const findSolicitanteById = async (id: number): Promise<Solicitante> => {
-    const solicitanteRepository = getRepository(Solicitante);
+export const findSolicitanteById = async (id: number): Promise<Solicitante | null> => {
     try {
-        const solicitante = await solicitanteRepository.findOneOrFail({ where: { id } });
-        return solicitante;
+      const solicitante = await Solicitante.findOneBy({ id });
+      return solicitante;
     } catch (error) {
-        throw new Error(`Solicitante con ID ${id} no encontrado`);
+      if (error instanceof Error) {
+        throw new Error(error.message);
+      }
+      return null;
     }
-};
+  };
 
 // Función para buscar usuarios en LDAP
 const buscarUsuario = async (ldapClient: any, username: string): Promise<boolean> => {
@@ -106,94 +109,95 @@ export const buscarUsuarioEnLDAP = async (req: Request, res: Response) => {
 export const crearUsuarioDesdeSolicitante = async (req: Request, res: Response) => {
     const { id } = req.body;
     try {
-        // Obtener datos del solicitante desde la base de datos
-        const solicitante = await findSolicitanteById(Number(id));
-        const { nombre_1, nombre_2, apellido_1, apellido_2 } = solicitante;
-
-        // Helper function to capitalize the first letter
-        const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-
-        // Lista de combinaciones de nombres de usuario
-        const combinaciones = [
-            `${nombre_1.charAt(0).toUpperCase()}${apellido_1.toLowerCase()}`,
-            `${nombre_1.charAt(0).toUpperCase()}${apellido_2.toLowerCase()}`,
-            `${nombre_1.charAt(0).toUpperCase()}${apellido_1.toLowerCase()}${apellido_2.toLowerCase()}`,
-            `${nombre_2 ? nombre_2.charAt(0).toUpperCase() : ''}${apellido_1.toLowerCase()}`,
-            `${nombre_2 ? nombre_2.charAt(0).toUpperCase() : ''}${apellido_2.toLowerCase()}`,
-            `${nombre_2 ? nombre_2.charAt(0).toUpperCase() : ''}${apellido_1.toLowerCase()}${apellido_2.toLowerCase()}`,
-            `${nombre_1.toLowerCase()}${capitalize(apellido_1.charAt(0))}`,
-            `${nombre_2 ? nombre_2.toLowerCase() : ''}${capitalize(apellido_1.charAt(0))}`,
-            `${nombre_1.toLowerCase()}${capitalize(apellido_2.charAt(0))}`,
-            `${nombre_2 ? nombre_2.toLowerCase() : ''}${capitalize(apellido_2.charAt(0))}`,
-            `${nombre_1.toLowerCase()}${nombre_2 ? capitalize(nombre_2.charAt(0)) : ''}${apellido_1.toLowerCase()}`,
-            `${nombre_1.toLowerCase()}${nombre_2 ? capitalize(nombre_2.charAt(0)) : ''}${apellido_2.toLowerCase()}`,
-            `${nombre_1.charAt(0).toLowerCase()}${nombre_2 ? nombre_2.toLowerCase() : ''}${apellido_1.toLowerCase()}`,
-            `${nombre_1.charAt(0).toLowerCase()}${nombre_2 ? nombre_2.toLowerCase() : ''}${apellido_2.toLowerCase()}`,
-            `${nombre_1.toLowerCase()}${apellido_1.toLowerCase()}${apellido_2.toLowerCase()}`,
-            `${nombre_1.toLowerCase()}${nombre_2 ? nombre_2.toLowerCase() : ''}${apellido_1.toLowerCase()}${apellido_2.toLowerCase()}`
-        ];
-
-        const ldapClient: any = await connectLDAP();
-
-        // Verificar si el usuario ya existe
-        let userExists = false;
-        let username = '';
-        for (let i = 0; i < combinaciones.length; i++) {
-            username = combinaciones[i];
-            if (!(await buscarUsuario(ldapClient, username))) {
-                userExists = true;
-                break;
-            }
+      // Obtener datos del solicitante desde la base de datos usando findSolicitanteById
+      const solicitante = await findSolicitanteById(Number(id));
+      if (!solicitante) {
+        return res.status(404).json({ message: `Solicitante con ID ${id} no encontrado` });
+      }
+  
+      const { nombre_1, nombre_2, apellido_1, apellido_2 } = solicitante;
+  
+      // Helper function to capitalize the first letter
+      const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  
+      // Lista de combinaciones de nombres de usuario
+      const combinaciones = [
+        `${nombre_1.charAt(0).toUpperCase()}${apellido_1.toLowerCase()}`,
+        `${nombre_1.charAt(0).toUpperCase()}${apellido_2.toLowerCase()}`,
+        `${nombre_1.charAt(0).toUpperCase()}${apellido_1.toLowerCase()}${apellido_2.toLowerCase()}`,
+        `${nombre_2 ? nombre_2.charAt(0).toUpperCase() : ''}${apellido_1.toLowerCase()}`,
+        `${nombre_2 ? nombre_2.charAt(0).toUpperCase() : ''}${apellido_2.toLowerCase()}`,
+        `${nombre_2 ? nombre_2.charAt(0).toUpperCase() : ''}${apellido_1.toLowerCase()}${apellido_2.toLowerCase()}`,
+        `${nombre_1.toLowerCase()}${capitalize(apellido_1.charAt(0))}`,
+        `${nombre_2 ? nombre_2.toLowerCase() : ''}${capitalize(apellido_1.charAt(0))}`,
+        `${nombre_1.toLowerCase()}${capitalize(apellido_2.charAt(0))}`,
+        `${nombre_2 ? nombre_2.toLowerCase() : ''}${capitalize(apellido_2.charAt(0))}`,
+        `${nombre_1.toLowerCase()}${nombre_2 ? capitalize(nombre_2.charAt(0)) : ''}${apellido_1.toLowerCase()}`,
+        `${nombre_1.toLowerCase()}${nombre_2 ? capitalize(nombre_2.charAt(0)) : ''}${apellido_2.toLowerCase()}`,
+        `${nombre_1.charAt(0).toLowerCase()}${nombre_2 ? nombre_2.toLowerCase() : ''}${apellido_1.toLowerCase()}`,
+        `${nombre_1.charAt(0).toLowerCase()}${nombre_2 ? nombre_2.toLowerCase() : ''}${apellido_2.toLowerCase()}`,
+        `${nombre_1.toLowerCase()}${apellido_1.toLowerCase()}${apellido_2.toLowerCase()}`,
+        `${nombre_1.toLowerCase()}${nombre_2 ? nombre_2.toLowerCase() : ''}${apellido_1.toLowerCase()}${apellido_2.toLowerCase()}`
+      ];
+  
+      const ldapClient: any = await connectLDAP();
+  
+      // Verificar si el usuario ya existe
+      let userExists = false;
+      let username = '';
+      for (let i = 0; i < combinaciones.length; i++) {
+        username = combinaciones[i];
+        if (!(await buscarUsuario(ldapClient, username))) {
+          userExists = true;
+          break;
         }
-
-        // Si todas las combinaciones fallan, agregar un número al final
-        if (!userExists) {
-            let suffix = 1;
-            while (await buscarUsuario(ldapClient, `${username}${suffix}`)) {
-                suffix++;
-            }
-            username = `${username}${suffix}`;
+      }
+  
+      // Si todas las combinaciones fallan, agregar un número al final
+      if (!userExists) {
+        let suffix = 1;
+        while (await buscarUsuario(ldapClient, `${username}${suffix}`)) {
+          suffix++;
         }
-
-        // Objeto que representa al usuario en LDAP
-        const user = {
-            cn: username,
-            sn: username,
-            uid: username,
-            mail: `${username}@uniss.edu.cu`,
-            objectClass: 'inetOrgPerson',
-            userPassword: 'abcd.1234'
-        };
-
-        // Especifica la DN donde se creará el usuario
-        // Reemplaza 'YourOU' con la OU específica donde deseas crear el usuario
-        const dn = `cn=${username},ou=YourOU,dc=uniss,dc=edu,dc=cu`;
-
-        ldapClient.add(dn, user, async (err: any) => {
-            if (err) {
-                console.error("Error al crear el usuario en LDAP:", err);
-                return res.status(500).json({ message: "Error al crear el usuario en LDAP" });
-            } else {
-                console.log(`Usuario creado en LDAP con username: ${username} y solicitanteId: ${solicitante.id}`);
-
-                // Obtener el email del responsable
-                const responsableRepository = getRepository(Responsable);
-                const responsable = await responsableRepository.findOne({ where: { id: solicitante.id } });
-
-                if (responsable) {
-                    // Enviar correo al responsable
-                    const asunto = 'Nuevo Usuario Creado';
-                    const texto = `Se ha creado un nuevo usuario en LDAP con el nombre de usuario: ${username}`;
-                    await enviarCorreo(responsable.email, asunto, texto);
-                } else {
-                    console.error(`Responsable con ID ${solicitante.id} no encontrado`);
-                }
-
-                return res.status(200).json({ message: `Usuario creado con username: ${username}` });
-            }
-        });
+        username = `${username}${suffix}`;
+      }
+  
+      // Objeto que representa al usuario en LDAP
+      const user = {
+        cn: username,
+        sn: username,
+        uid: username,
+        mail: `${username}@uniss.edu.cu`,
+        objectClass: 'inetOrgPerson',
+        userPassword: 'abcd.1234'
+      };
+  
+      // Especifica la DN donde se creará el usuario
+      const dn = `cn=${username},ou=Estudiantes,ou=Pruebas_informatizacion,ou=UNISS_Users,dc=uniss,dc=edu,dc=cu`;
+  
+      ldapClient.add(dn, user, async (err: any) => {
+        if (err) {
+          console.error("Error al crear el usuario en LDAP:", err);
+          return res.status(500).json({ message: "Error al crear el usuario en LDAP" });
+        } else {
+          console.log(`Usuario creado en LDAP con username: ${username} y solicitanteId: ${solicitante.id}`);
+  
+          // Obtener el email del responsable
+          const responsableRepository = AppDataSource.getRepository(Responsable);
+          const responsable = await responsableRepository.findOne({ where: { id: solicitante.id } });
+          if (responsable) {
+            // Enviar correo al responsable
+            const asunto = 'Nuevo Usuario Creado';
+            const texto = `Se ha creado un nuevo usuario en LDAP con el nombre de usuario: ${username}`;
+            await enviarCorreo(responsable.email, asunto, texto);
+          } else {
+            console.error(`Responsable con ID ${solicitante.id} no encontrado`);
+          }
+          return res.status(200).json({ message: `Usuario creado con username: ${username}` });
+        }
+      });
     } catch (error: any) {
-        console.error(error.message);
-        res.status(500).json({ message: error.message });
+      console.error(error.message);
+      res.status(500).json({ message: error.message });
     }
-};
+  };
