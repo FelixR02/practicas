@@ -169,16 +169,16 @@ export const crearUsuarioDesdeSolicitante = async (req: Request, res: Response) 
   
       // Objeto que representa al usuario en LDAP
       const user = {
-        cn: "Camilo",
-        sn: "German",
-        uid: "username",
+        cn: "Ande",
+        sn: "Zade",
+        uid: "username2",
         /* mail: `${username}@uniss.edu.cu`, */
         objectClass: 'inetOrgPerson',
         userPassword: 'abcd.1234'
       };
   /* ${username} */
       // Especifica la DN donde se creará el usuario
-      const dn = `cn=Camilo,ou=Estudiantes,ou=Pruebas_informatizacion,ou=UNISS_Users,dc=uniss,dc=edu,dc=cu`;
+      const dn = `cn=Juan,ou=Estudiantes,ou=Pruebas_informatizacion,ou=UNISS_Users,dc=uniss,dc=edu,dc=cu`;
   
       ldapClient.add(dn, user, async (err: any) => {
         if (err) {
