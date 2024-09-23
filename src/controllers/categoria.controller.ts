@@ -4,12 +4,10 @@ import { Categoria } from "../entities/categoria"
 
 export const crearCategoria = async (req: Request, res: Response) => {
     try {
-        const { estudiante, docente, noDocente } = req.body
+        const { nombre } = req.body
         const categoria = new Categoria()
 
-        categoria.estudiante = estudiante
-        categoria.docente = docente
-        categoria.noDocente = noDocente
+        categoria.nombre = nombre
 
         await categoria.save()
         return res.json(categoria)

@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { getRepository } from "typeorm";
-import { Solicitante } from "./entities/solicitante";
+import { Solicitud } from "./entities/solicitud";
 import { Responsable } from "./entities/responsable";
 import { enviarCorreo } from "./mailer"; // Importa la función para enviar correos
 import { AppDataSource } from "./db";
@@ -34,10 +34,10 @@ const connectLDAP = async () => {
 // Función para obtener un solicitante desde la base de datos
 export const findSolicitanteById = async (
   id: number
-): Promise<Solicitante | null> => {
+): Promise<Solicitud | null> => {
   try {
-    const solicitante = await Solicitante.findOneBy({ id });
-    return solicitante;
+    const solicitud = await Solicitud.findOneBy({ id });
+    return solicitud;
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(error.message);
@@ -137,15 +137,15 @@ export const crearUsuarioDesdeSolicitante = async (
 ) => {
   const { id } = req.body;
   try {
-    // Obtener datos del solicitante desde la base de datos usando findSolicitanteById
-    const solicitante = await findSolicitanteById(Number(id));
-    if (!solicitante) {
+    // Obtener datos de la solicitud desde la base de datos usando findSolicitanteById
+    const solicitud = await findSolicitanteById(Number(id));
+    if (!solicitud) {
       return res
         .status(404)
-        .json({ message: `Solicitante con ID ${id} no encontrado` });
+        .json({ message: `Solicitud con ID ${id} no encontrado` });
     }
 
-    const { nombre_1, nombre_2, apellido_1, apellido_2 } = solicitante;
+    const { nombre_1, nombre_2, apellido_1, apellido_2, } = solicitud;
 
     // Helper function to capitalize the first letter
     const capitalize = (str: string) =>
@@ -260,13 +260,13 @@ export const crearUsuarioDesdeSolicitante = async (
           .json({ message: "Error al crear el usuario en LDAP" });
       } else {
         console.log(
-          `Usuario creado en LDAP con username: ${username} y solicitanteId: ${solicitante.id}`
+          `Usuario creado en LDAP con username: ${username} y solicitanteId: ${solicitud.id}`
         );
 
         // Obtener el email del responsable
         const responsableRepository = AppDataSource.getRepository(Responsable);
         const responsable = await responsableRepository.findOne({
-          where: { id: solicitante.id },
+          where: { id: solicitud.id },
         });
         if (responsable) {
           // Enviar correo al responsable
@@ -274,7 +274,7 @@ export const crearUsuarioDesdeSolicitante = async (
           const texto = `Se ha creado un nuevo usuario en LDAP con el nombre de usuario: ${username}`;
           await enviarCorreo(responsable.email, asunto, texto);
         } else {
-          console.error(`Responsable con ID ${solicitante.id} no encontrado`);
+          console.error(`Responsable con ID ${solicitud.id} no encontrado`);
         }
         return res
           .status(200)

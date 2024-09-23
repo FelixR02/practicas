@@ -10,10 +10,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Solicitud = void 0;
-// src/entities/solicitud.ts
+// src/entities/solicitante.ts
 const typeorm_1 = require("typeorm");
+const categoria_1 = require("./categoria");
 const responsable_1 = require("./responsable");
-const solicitante_1 = require("./solicitante");
 let Solicitud = class Solicitud extends typeorm_1.BaseEntity {
 };
 exports.Solicitud = Solicitud;
@@ -24,39 +24,35 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
-], Solicitud.prototype, "fundamentacion", void 0);
-__decorate([
-    (0, typeorm_1.CreateDateColumn)(),
-    __metadata("design:type", Date)
-], Solicitud.prototype, "creado", void 0);
-__decorate([
-    (0, typeorm_1.UpdateDateColumn)(),
-    __metadata("design:type", Date)
-], Solicitud.prototype, "actualizado", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => responsable_1.Responsable, responsable => responsable.solicitudes),
-    (0, typeorm_1.JoinColumn)({ name: "responsableId" }),
-    __metadata("design:type", responsable_1.Responsable)
-], Solicitud.prototype, "responsable", void 0);
+], Solicitud.prototype, "nombre_1", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], Solicitud.prototype, "responsableId", void 0);
+    __metadata("design:type", String)
+], Solicitud.prototype, "nombre_2", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => solicitante_1.Solicitante, (solicitante) => solicitante.solicitudes),
-    (0, typeorm_1.JoinTable)({
-        name: "solicitud_solicitantes_solicitante",
-        joinColumn: {
-            name: "solicitudId",
-            referencedColumnName: "id"
-        },
-        inverseJoinColumn: {
-            name: "solicitanteId",
-            referencedColumnName: "id"
-        }
-    }),
-    __metadata("design:type", Array)
-], Solicitud.prototype, "solicitantes", void 0);
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", String)
+], Solicitud.prototype, "apellido_1", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", String)
+], Solicitud.prototype, "apellido_2", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", String)
+], Solicitud.prototype, "fundamentacion", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => categoria_1.Categoria, (categoria) => categoria.solicitud),
+    (0, typeorm_1.JoinColumn)({ name: "categoriaId" }) // Especifica la columna de la clave foránea
+    ,
+    __metadata("design:type", categoria_1.Categoria)
+], Solicitud.prototype, "categoria", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => responsable_1.Responsable, (responsable) => responsable.solicitudes),
+    (0, typeorm_1.JoinColumn)({ name: "responsableId" }) // Especifica la columna de la clave foránea
+    ,
+    __metadata("design:type", responsable_1.Responsable)
+], Solicitud.prototype, "responsable", void 0);
 exports.Solicitud = Solicitud = __decorate([
     (0, typeorm_1.Entity)()
 ], Solicitud);

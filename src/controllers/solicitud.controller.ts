@@ -1,61 +1,95 @@
 import { Request, Response } from "express"
 import { Solicitud } from "../entities/solicitud"
-import { Solicitante } from "../entities/solicitante";
+import { Categoria } from "../entities/categoria"
+import { Responsable } from "../entities/responsable"
 
 
-export const crearSolicitud = async (req: Request, res: Response) => {
+
+export const crearSolicitante = async (req: Request, res: Response) => {
     try {
-        const { fundamentacion, responsableId, solicitantes } = req.body;
-        const solicitud = new Solicitud();
+        const { nombre_1, nombre_2, apellido_1, apellido_2, categoriaId,responsableId } = req.body
 
-        solicitud.fundamentacion = fundamentacion;
-        solicitud.responsableId = responsableId;
+        // Busca la categoría por ID
+        const categoria = await Categoria.findOneBy({ id: categoriaId });
+        if (!categoria) {
+            return res.status(404).json({ message: "Categoria no encontrada" });
+        }
 
-        // Cargar los solicitantes desde la base de datos
-        const solicitantesEntities = await Solicitante.findByIds(solicitantes);
-        solicitud.solicitantes = solicitantesEntities;
+        const responsable = await Responsable.findOneBy({ id: responsableId });
+        if (!responsable) {
+            return res.status(404).json({ message: "Responsbale no encontrado" });
+        }
 
-        await solicitud.save();
-        return res.json(solicitud);
+
+
+
+        const solicitud = new Solicitud()
+
+        solicitud.nombre_1 = nombre_1
+        solicitud.nombre_2 = nombre_2
+        solicitud.apellido_1 = apellido_1
+        solicitud.apellido_2 = apellido_2
+        solicitud.categoria = categoria; // Asigna la categoría al solicitante
+        solicitud.responsable= responsable;
+
+
+        await solicitud.save()
+        return res.json(solicitud)
     } catch (error) {
         if (error instanceof Error)
+            return res.status(500).json({ message: error.message })
+    }
+}
+
+export const getSolicitantes = async (req: Request, res: Response) => {
+    try {
+        const solicitante = await Solicitud.find()
+        return res.json(solicitante)
+    } catch (error) {
+        if (error instanceof Error)
+            return res.status(500).json({ message: error.message })
+    }
+
+}
+export const updateSolicitante = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { nombre_1, nombre_2, apellido_1, apellido_2, categoriaId } = req.body;
+
+        const solicitante = await Solicitud.findOneBy({ id: parseInt(id) });
+        if (!solicitante) {
+            return res.status(404).json({ message: "No existe el solicitante" });
+        }
+
+        if (nombre_1) solicitante.nombre_1 = nombre_1;
+        if (nombre_2) solicitante.nombre_2 = nombre_2;
+        if (apellido_1) solicitante.apellido_1 = apellido_1;
+        if (apellido_2) solicitante.apellido_2 = apellido_2;
+        if (categoriaId) {
+            const categoria = await Categoria.findOneBy({ id: categoriaId });
+            if (categoria) {
+                solicitante.categoria = categoria;
+            } else {
+                return res.status(404).json({ message: "No existe la categoria" });
+            }
+        }
+
+        await solicitante.save();
+        return res.sendStatus(204);
+    } catch (error) {
+        if (error instanceof Error) {
             return res.status(500).json({ message: error.message });
+        }
     }
 }
 
-export const getSolicitudes = async (req: Request, res: Response) => {
-    try {
-        const s = await Solicitud.find()
-        return res.json(s)
-    } catch (error) {
-        if (error instanceof Error)
-            return res.status(500).json({ message: error.message })
-    }
-
-}
-export const updateSolicitud = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params
-
-        const solicitud = await Solicitud.findOneBy({ id: parseInt(req.params.id) })
-        if (!solicitud)
-            return res.status(404).json({ message: "No existe el área" })
-
-        await Solicitud.update({ id: parseInt(id) }, req.body)
-
-        return res.sendStatus(204)
-    } catch (error) {
-        if (error instanceof Error)
-            return res.status(500).json({ message: error.message })
-    }
-}
-export const deleteSolicitud = async (req: Request, res: Response) => {
+export const deleteSolicitante = async (req: Request, res: Response) => {
     try {
         const { id } = req.params
 
         const result = await Solicitud.delete({ id: parseInt(id) })
         if (result.affected === 0)
-            return res.status(404).json("La solicitud no existe")
+            return res.status(404).json("El responsable no existe")
 
         return res.sendStatus(204)
     } catch (error) {
@@ -65,11 +99,11 @@ export const deleteSolicitud = async (req: Request, res: Response) => {
 
 }
 
-export const getSolicitud = async (req: Request, res: Response) => {
+export const getSolicitante = async (req: Request, res: Response) => {
     try {
         const { id } = req.params
-        const s = await Solicitud.findOneBy({ id: parseInt(id) })
-        return res.json(s)
+        const solicitante = await Solicitud.findOneBy({ id: parseInt(id) })
+        return res.json(solicitante)
     } catch (error) {
         if (error instanceof Error)
             return res.status(500).json({ message: error.message })

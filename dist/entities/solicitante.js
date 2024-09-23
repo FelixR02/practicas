@@ -14,7 +14,6 @@ exports.Solicitante = void 0;
 const typeorm_1 = require("typeorm");
 const solicitud_1 = require("./solicitud");
 const categoria_1 = require("./categoria");
-const estadoSolicitud_1 = require("./estadoSolicitud");
 let Solicitante = class Solicitante extends typeorm_1.BaseEntity {
 };
 exports.Solicitante = Solicitante;
@@ -43,15 +42,11 @@ __decorate([
     __metadata("design:type", Array)
 ], Solicitante.prototype, "solicitudes", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => categoria_1.Categoria, (categoria) => categoria.solicitante),
-    (0, typeorm_1.JoinColumn)(),
+    (0, typeorm_1.ManyToOne)(() => categoria_1.Categoria, (categoria) => categoria.solicitante),
+    (0, typeorm_1.JoinColumn)({ name: "categoriaId" }) // Especifica la columna de la clave foránea
+    ,
     __metadata("design:type", categoria_1.Categoria)
 ], Solicitante.prototype, "categoria", void 0);
-__decorate([
-    (0, typeorm_1.OneToOne)(() => estadoSolicitud_1.EstadoSolicitud, (estadoSolicitud) => estadoSolicitud.solicitante),
-    (0, typeorm_1.JoinColumn)(),
-    __metadata("design:type", estadoSolicitud_1.EstadoSolicitud)
-], Solicitante.prototype, "estadoSolicitud", void 0);
 exports.Solicitante = Solicitante = __decorate([
     (0, typeorm_1.Entity)()
 ], Solicitante);

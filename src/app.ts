@@ -5,9 +5,7 @@ import areaRouter from "./routes/areaRoutes"
 import carreraRouter from "./routes/carreraRoutes"
 import categoriaRouter from "./routes/categoriaRoutes"
 import departamentoRouter from "./routes/departamentoRoutes"
-import estadoSolicitudRoutes from "./routes/estadoSolicitudRoutes"
 import responsableRoutes from "./routes/responsableRoutes"
-import solicitanteRoutes from "./routes/solicitanteRoutes"
 import solicitudRoutes from "./routes/solicitudRoutes"
 import ladpRoutes from"./routes/ldapRoutes"
 import { LDAPConnection } from "./ldap_conected"
@@ -25,9 +23,7 @@ app.use(areaRouter)
 app.use(carreraRouter)
 app.use(categoriaRouter)
 app.use(departamentoRouter)
-app.use(estadoSolicitudRoutes)
 app.use(responsableRoutes)
-app.use(solicitanteRoutes)
 app.use(solicitudRoutes)
 app.use(ladpRoutes)
 app.post("/ldap/connect",LDAPConnection)

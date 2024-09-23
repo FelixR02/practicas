@@ -1,26 +1,16 @@
-import { BaseEntity, Column, Entity, OneToOne, PrimaryGeneratedColumn} from "typeorm";
-import { Solicitante } from "./solicitante";
+import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn} from "typeorm";
+import { Solicitud } from "./solicitud";
 
 @Entity()
 export class Categoria extends BaseEntity {
     @PrimaryGeneratedColumn()
-    id: number
-    @Column({
-        default: false
-    })
-    estudiante: boolean
-    @Column({
-        default: false
-    })
-    docente: boolean
-    @Column({
-        default: false
-    })
-    noDocente: boolean
-    
+    id: number;
+    @Column()
+    nombre: string;
+   
 
 
     //Solicitante
-    @OneToOne(() => Solicitante, (solicitante) => solicitante.categoria)
-    solicitante:Solicitante;
+    @OneToMany(() => Solicitud, (solicitud) => solicitud.categoria)
+    solicitud:Solicitud;
 }

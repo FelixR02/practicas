@@ -1,7 +1,8 @@
-// src/entities/solicitud.ts
-import { BaseEntity, Column, CreateDateColumn, ManyToOne, JoinColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn, ManyToMany, JoinTable } from "typeorm";
+// src/entities/solicitante.ts
+import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Categoria } from "./categoria";
 import { Responsable } from "./responsable";
-import { Solicitante } from "./solicitante";
+
 
 @Entity()
 export class Solicitud extends BaseEntity {
@@ -9,34 +10,26 @@ export class Solicitud extends BaseEntity {
     id: number;
 
     @Column()
-    fundamentacion: string;
-
-    @CreateDateColumn()
-    creado: Date;
-
-    @UpdateDateColumn()
-    actualizado: Date;
-
-    // Responsable
-    @ManyToOne(() => Responsable, responsable => responsable.solicitudes)
-    @JoinColumn({ name: "responsableId" })
-    responsable: Responsable;
+    nombre_1: string;
 
     @Column()
-    responsableId: number;
+    nombre_2: string;
 
-    // Solicitante
-    @ManyToMany(() => Solicitante, (solicitante) => solicitante.solicitudes)
-    @JoinTable({
-        name: "solicitud_solicitantes_solicitante",
-        joinColumn: {
-            name: "solicitudId",
-            referencedColumnName: "id"
-        },
-        inverseJoinColumn: {
-            name: "solicitanteId",
-            referencedColumnName: "id"
-        }
-    })
-    solicitantes: Solicitante[];
+    @Column()
+    apellido_1: string;
+
+    @Column()
+    apellido_2: string;
+
+    @Column()
+    fundamentacion: string;
+
+    // Categoria
+    @ManyToOne(() => Categoria, (categoria) => categoria.solicitud)
+    @JoinColumn({ name: "categoriaId" })  // Especifica la columna de la clave foránea
+    categoria: Categoria;
+    
+    @ManyToOne(() => Responsable, (responsable) => responsable.solicitudes)
+    @JoinColumn({ name: "responsableId" })  // Especifica la columna de la clave foránea
+    responsable: Responsable;
 }

@@ -9,18 +9,29 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSolicitud = exports.deleteSolicitud = exports.updateSolicitud = exports.getSolicitudes = exports.crearSolicitud = void 0;
+exports.getSolicitante = exports.deleteSolicitante = exports.updateSolicitante = exports.getSolicitantes = exports.crearSolicitante = void 0;
 const solicitud_1 = require("../entities/solicitud");
-const solicitante_1 = require("../entities/solicitante");
-const crearSolicitud = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const categoria_1 = require("../entities/categoria");
+const responsable_1 = require("../entities/responsable");
+const crearSolicitante = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { fundamentacion, responsableId, solicitantes } = req.body;
+        const { nombre_1, nombre_2, apellido_1, apellido_2, categoriaId, responsableId } = req.body;
+        // Busca la categoría por ID
+        const categoria = yield categoria_1.Categoria.findOneBy({ id: categoriaId });
+        if (!categoria) {
+            return res.status(404).json({ message: "Categoria no encontrada" });
+        }
+        const responsable = yield responsable_1.Responsable.findOneBy({ id: responsableId });
+        if (!responsable) {
+            return res.status(404).json({ message: "Responsbale no encontrado" });
+        }
         const solicitud = new solicitud_1.Solicitud();
-        solicitud.fundamentacion = fundamentacion;
-        solicitud.responsableId = responsableId;
-        // Cargar los solicitantes desde la base de datos
-        const solicitantesEntities = yield solicitante_1.Solicitante.findByIds(solicitantes);
-        solicitud.solicitantes = solicitantesEntities;
+        solicitud.nombre_1 = nombre_1;
+        solicitud.nombre_2 = nombre_2;
+        solicitud.apellido_1 = apellido_1;
+        solicitud.apellido_2 = apellido_2;
+        solicitud.categoria = categoria; // Asigna la categoría al solicitante
+        solicitud.responsable = responsable;
         yield solicitud.save();
         return res.json(solicitud);
     }
@@ -29,39 +40,59 @@ const crearSolicitud = (req, res) => __awaiter(void 0, void 0, void 0, function*
             return res.status(500).json({ message: error.message });
     }
 });
-exports.crearSolicitud = crearSolicitud;
-const getSolicitudes = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.crearSolicitante = crearSolicitante;
+const getSolicitantes = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const s = yield solicitud_1.Solicitud.find();
-        return res.json(s);
+        const solicitante = yield solicitud_1.Solicitud.find();
+        return res.json(solicitante);
     }
     catch (error) {
         if (error instanceof Error)
             return res.status(500).json({ message: error.message });
     }
 });
-exports.getSolicitudes = getSolicitudes;
-const updateSolicitud = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.getSolicitantes = getSolicitantes;
+const updateSolicitante = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const solicitud = yield solicitud_1.Solicitud.findOneBy({ id: parseInt(req.params.id) });
-        if (!solicitud)
-            return res.status(404).json({ message: "No existe el área" });
-        yield solicitud_1.Solicitud.update({ id: parseInt(id) }, req.body);
+        const { nombre_1, nombre_2, apellido_1, apellido_2, categoriaId } = req.body;
+        const solicitante = yield solicitud_1.Solicitud.findOneBy({ id: parseInt(id) });
+        if (!solicitante) {
+            return res.status(404).json({ message: "No existe el solicitante" });
+        }
+        if (nombre_1)
+            solicitante.nombre_1 = nombre_1;
+        if (nombre_2)
+            solicitante.nombre_2 = nombre_2;
+        if (apellido_1)
+            solicitante.apellido_1 = apellido_1;
+        if (apellido_2)
+            solicitante.apellido_2 = apellido_2;
+        if (categoriaId) {
+            const categoria = yield categoria_1.Categoria.findOneBy({ id: categoriaId });
+            if (categoria) {
+                solicitante.categoria = categoria;
+            }
+            else {
+                return res.status(404).json({ message: "No existe la categoria" });
+            }
+        }
+        yield solicitante.save();
         return res.sendStatus(204);
     }
     catch (error) {
-        if (error instanceof Error)
+        if (error instanceof Error) {
             return res.status(500).json({ message: error.message });
+        }
     }
 });
-exports.updateSolicitud = updateSolicitud;
-const deleteSolicitud = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.updateSolicitante = updateSolicitante;
+const deleteSolicitante = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
         const result = yield solicitud_1.Solicitud.delete({ id: parseInt(id) });
         if (result.affected === 0)
-            return res.status(404).json("La solicitud no existe");
+            return res.status(404).json("El responsable no existe");
         return res.sendStatus(204);
     }
     catch (error) {
@@ -69,16 +100,16 @@ const deleteSolicitud = (req, res) => __awaiter(void 0, void 0, void 0, function
             return res.status(500).json({ message: error.message });
     }
 });
-exports.deleteSolicitud = deleteSolicitud;
-const getSolicitud = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.deleteSolicitante = deleteSolicitante;
+const getSolicitante = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const s = yield solicitud_1.Solicitud.findOneBy({ id: parseInt(id) });
-        return res.json(s);
+        const solicitante = yield solicitud_1.Solicitud.findOneBy({ id: parseInt(id) });
+        return res.json(solicitante);
     }
     catch (error) {
         if (error instanceof Error)
             return res.status(500).json({ message: error.message });
     }
 });
-exports.getSolicitud = getSolicitud;
+exports.getSolicitante = getSolicitante;

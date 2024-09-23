@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSolicitante = exports.deleteSolicitante = exports.updateSolicitante = exports.getSolicitantes = exports.crearSolicitante = void 0;
 const solicitante_1 = require("../entities/solicitante");
 const categoria_1 = require("../entities/categoria");
-const estadoSolicitud_1 = require("../entities/estadoSolicitud");
 const crearSolicitante = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { nombre_1, nombre_2, apellido_1, apellido_2, categoriaId, estadoSolicitudId } = req.body;
@@ -21,18 +20,12 @@ const crearSolicitante = (req, res) => __awaiter(void 0, void 0, void 0, functio
         if (!categoria) {
             return res.status(404).json({ message: "Categoria no encontrada" });
         }
-        // Busca el estado de solicitud por ID
-        const estadoSolicitud = yield estadoSolicitud_1.EstadoSolicitud.findOneBy({ id: estadoSolicitudId });
-        if (!estadoSolicitud) {
-            return res.status(404).json({ message: "Estado de solicitud no encontrado" });
-        }
         const solicitante = new solicitante_1.Solicitante();
         solicitante.nombre_1 = nombre_1;
         solicitante.nombre_2 = nombre_2;
         solicitante.apellido_1 = apellido_1;
         solicitante.apellido_2 = apellido_2;
         solicitante.categoria = categoria; // Asigna la categoría al solicitante
-        solicitante.estadoSolicitud = estadoSolicitud; // Asigna el estado de solicitud al solicitante
         yield solicitante.save();
         return res.json(solicitante);
     }

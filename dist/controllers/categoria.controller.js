@@ -13,11 +13,9 @@ exports.getCategoria = exports.deleteCategoria = exports.updateCategorias = expo
 const categoria_1 = require("../entities/categoria");
 const crearCategoria = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { estudiante, docente, noDocente } = req.body;
+        const { nombre } = req.body;
         const categoria = new categoria_1.Categoria();
-        categoria.estudiante = estudiante;
-        categoria.docente = docente;
-        categoria.noDocente = noDocente;
+        categoria.nombre = nombre;
         yield categoria.save();
         return res.json(categoria);
     }

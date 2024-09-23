@@ -11,7 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Categoria = void 0;
 const typeorm_1 = require("typeorm");
-const solicitante_1 = require("./solicitante");
+const solicitud_1 = require("./solicitud");
 let Categoria = class Categoria extends typeorm_1.BaseEntity {
 };
 exports.Categoria = Categoria;
@@ -20,27 +20,13 @@ __decorate([
     __metadata("design:type", Number)
 ], Categoria.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({
-        default: false
-    }),
-    __metadata("design:type", Boolean)
-], Categoria.prototype, "estudiante", void 0);
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", String)
+], Categoria.prototype, "nombre", void 0);
 __decorate([
-    (0, typeorm_1.Column)({
-        default: false
-    }),
-    __metadata("design:type", Boolean)
-], Categoria.prototype, "docente", void 0);
-__decorate([
-    (0, typeorm_1.Column)({
-        default: false
-    }),
-    __metadata("design:type", Boolean)
-], Categoria.prototype, "noDocente", void 0);
-__decorate([
-    (0, typeorm_1.OneToOne)(() => solicitante_1.Solicitante, (solicitante) => solicitante.categoria),
-    __metadata("design:type", solicitante_1.Solicitante)
-], Categoria.prototype, "solicitante", void 0);
+    (0, typeorm_1.OneToMany)(() => solicitud_1.Solicitud, (solicitud) => solicitud.categoria),
+    __metadata("design:type", solicitud_1.Solicitud)
+], Categoria.prototype, "solicitud", void 0);
 exports.Categoria = Categoria = __decorate([
     (0, typeorm_1.Entity)()
 ], Categoria);

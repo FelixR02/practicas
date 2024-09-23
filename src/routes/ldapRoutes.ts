@@ -10,5 +10,4 @@ router.post('/crear-usuario-trabajador', crearUsuarioDesdeSolicitanteTrabajador)
 router.get('/buscar-usuario/:username', buscarUsuarioEnLDAP);
 
 
-
 export default router;
