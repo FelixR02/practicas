@@ -285,4 +285,161 @@ export const crearUsuarioDesdeSolicitante = async (
     console.error(error.message);
     res.status(500).json({ message: error.message });
   }
+  
+};
+export const crearUsuarioDesdeSolicitanteTrabajador = async (
+  req: Request,
+  res: Response
+) => {
+  const { id } = req.body;
+  try {
+    // Obtener datos del solicitante desde la base de datos usando findSolicitanteById
+    const solicitante = await findSolicitanteById(Number(id));
+    if (!solicitante) {
+      return res
+        .status(404)
+        .json({ message: `Solicitante con ID ${id} no encontrado` });
+    }
+
+    const { nombre_1, nombre_2, apellido_1, apellido_2 } = solicitante;
+
+    // Helper function to capitalize the first letter
+    const capitalize = (str: string) =>
+      str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+
+    // Lista de combinaciones de nombres de usuario
+    const combinaciones = [
+      `${nombre_1.charAt(0).toUpperCase()}${apellido_1.toLowerCase()}`,
+      `${nombre_1.charAt(0).toUpperCase()}${apellido_2.toLowerCase()}`,
+      `${nombre_1
+        .charAt(0)
+        .toUpperCase()}${apellido_1.toLowerCase()}${apellido_2.toLowerCase()}`,
+      `${
+        nombre_2 ? nombre_2.charAt(0).toUpperCase() : ""
+      }${apellido_1.toLowerCase()}`,
+      `${
+        nombre_2 ? nombre_2.charAt(0).toUpperCase() : ""
+      }${apellido_2.toLowerCase()}`,
+      `${
+        nombre_2 ? nombre_2.charAt(0).toUpperCase() : ""
+      }${apellido_1.toLowerCase()}${apellido_2.toLowerCase()}`,
+      `${nombre_1.toLowerCase()}${capitalize(apellido_1.charAt(0))}`,
+      `${nombre_2 ? nombre_2.toLowerCase() : ""}${capitalize(
+        apellido_1.charAt(0)
+      )}`,
+      `${nombre_1.toLowerCase()}${capitalize(apellido_2.charAt(0))}`,
+      `${nombre_2 ? nombre_2.toLowerCase() : ""}${capitalize(
+        apellido_2.charAt(0)
+      )}`,
+      `${nombre_1.toLowerCase()}${
+        nombre_2 ? capitalize(nombre_2.charAt(0)) : ""
+      }${apellido_1.toLowerCase()}`,
+      `${nombre_1.toLowerCase()}${
+        nombre_2 ? capitalize(nombre_2.charAt(0)) : ""
+      }${apellido_2.toLowerCase()}`,
+      `${nombre_1.charAt(0).toLowerCase()}${
+        nombre_2 ? nombre_2.toLowerCase() : ""
+      }${apellido_1.toLowerCase()}`,
+      `${nombre_1.charAt(0).toLowerCase()}${
+        nombre_2 ? nombre_2.toLowerCase() : ""
+      }${apellido_2.toLowerCase()}`,
+      `${nombre_1.toLowerCase()}${apellido_1.toLowerCase()}${apellido_2.toLowerCase()}`,
+      `${nombre_1.toLowerCase()}${
+        nombre_2 ? nombre_2.toLowerCase() : ""
+      }${apellido_1.toLowerCase()}${apellido_2.toLowerCase()}`,
+    ];
+
+    const ldapClient: any = await connectLDAP();
+
+    // Verificar si el usuario ya existe
+    let userExists = false;
+    let username = "";
+    for (let i = 0; i < combinaciones.length; i++) {
+      username = combinaciones[i];
+      if (!(await buscarUsuario(ldapClient, username))) {
+        userExists = true;
+        break;
+      }
+    }
+
+    // Si todas las combinaciones fallan, agregar un número al final
+    if (!userExists) {
+      let suffix = 1;
+      while (await buscarUsuario(ldapClient, `${username}${suffix}`)) {
+        suffix++;
+      }
+      username = `${username}${suffix}`;
+    }
+    // Validar que el username no contenga caracteres no válidos
+    const invalidChars = /[,\=\+<>#;\\"]/;
+    if (invalidChars.test(username)) {
+      throw new Error(
+        `El nombre de usuario contiene caracteres no válidos: ${username}`
+      );
+    }
+    // Construir el campo cn
+    const cn = `${nombre_1} ${
+      nombre_2 ? nombre_2 + " " : ""
+    }${apellido_1} ${apellido_2}`;
+
+    // Objeto que representa al usuario en LDAP
+    const user = {
+      cn: cn /*  */,
+      givenName: nombre_1 /*  */,
+      sn: apellido_1 + " " + apellido_2,
+      uid: username /*  */,
+      displayName: nombre_1 /* nombre que muestra al usuario */,
+      title: "estudiante" /* rol */,
+      l: "Sancti Spiritus" /*lugar de origen  */,
+      postalCode: "50100",
+      /* mail: `${username}@uniss.edu.cu`, */
+      objectClass: "inetOrgPerson",
+      userPassword: "abcd.1234",
+      employeeNumber: "123456",// Usando employeeNumber para almacenar el PIN
+      sAMAccountName: username, 
+      /* accountExpires: Fecha y hora en que expira la cuenta.
+      lastLogon: Fecha y hora del último inicio de sesión.
+      pwdLastSet: Fecha y hora en que se estableció la contraseña por última vez.
+      sAMAccountName: Nombre de cuenta de inicio de sesión.
+      userAccountControl: Control de la cuenta del usuario (estado de la cuenta, etc.)
+      nota usar campo manager, para almacenar profesor guia y este mostrara horarios a los estudiantes en el futuro */
+    };
+    /* ${username} */
+    // Especifica la DN donde se creará el usuario
+    const dn = `cn=${cn},ou=Trabajadores,ou=Pruebas_crear_usuarios,dc=uniss,dc=edu,dc=cu`;
+
+    ldapClient.add(dn, user, async (err: any) => {
+      if (err) {
+        console.error("Error al crear el usuario en LDAP:", err);
+        return res
+          .status(500)
+          .json({ message: "Error al crear el usuario en LDAP" });
+      } else {
+        console.log(
+          `Usuario creado en LDAP con username: ${username} y solicitanteId: ${solicitante.id}`
+        );
+
+        // Obtener el email del responsable
+        const responsableRepository = AppDataSource.getRepository(Responsable);
+        const responsable = await responsableRepository.findOne({
+          where: { id: solicitante.id },
+        });
+        if (responsable) {
+          // Enviar correo al responsable
+          const asunto = "Nuevo Usuario Creado";
+          const texto = `Se ha creado un nuevo usuario en LDAP con el nombre de usuario: ${username}`;
+          await enviarCorreo(responsable.email, asunto, texto);
+        } else {
+          console.error(`Responsable con ID ${solicitante.id} no encontrado`);
+        }
+        return res
+          .status(200)
+          .json({ message: `Usuario creado con username: ${username}` });
+      }
+    });
+  } catch (error: any) {
+    console.error(error.message);
+    res.status(500).json({ message: error.message });
+  }
+  
 };
