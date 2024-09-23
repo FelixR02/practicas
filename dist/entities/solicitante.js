@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Solicitante = void 0;
+// src/entities/solicitante.ts
 const typeorm_1 = require("typeorm");
 const solicitud_1 = require("./solicitud");
 const categoria_1 = require("./categoria");

@@ -53,7 +53,7 @@ exports.findSolicitanteById = findSolicitanteById;
 const buscarUsuario = (ldapClient, username) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const opts = { filter: `(uid=${username})`, scope: "sub" };
-        const baseDN = "ou=Estudiantes,ou=Pruebas_informatizacion,ou=UNISS_Users,dc=uniss,dc=edu,dc=cu"; // Asegúrate de que esta DN es correcta
+        const baseDN = "ou=Estudiantes,ou=Pruebas_crear_usuarios,dc=uniss,dc=edu,dc=cu"; // Asegúrate de que esta DN es correcta
         return yield new Promise((resolve, reject) => {
             ldapClient.search(baseDN, opts, (err, res) => {
                 if (err) {
@@ -201,6 +201,7 @@ const crearUsuarioDesdeSolicitante = (req, res) => __awaiter(void 0, void 0, voi
             objectClass: "inetOrgPerson",
             userPassword: "abcd.1234",
             employeeNumber: "123456", // Usando employeeNumber para almacenar el PIN
+            sAMAccountName: username,
             /* accountExpires: Fecha y hora en que expira la cuenta.
             lastLogon: Fecha y hora del último inicio de sesión.
             pwdLastSet: Fecha y hora en que se estableció la contraseña por última vez.
@@ -210,7 +211,7 @@ const crearUsuarioDesdeSolicitante = (req, res) => __awaiter(void 0, void 0, voi
         };
         /* ${username} */
         // Especifica la DN donde se creará el usuario
-        const dn = `cn=${cn},ou=Estudiantes,ou=Pruebas_informatizacion,ou=UNISS_Users,dc=uniss,dc=edu,dc=cu`;
+        const dn = `cn=${cn},ou=Estudiantes,ou=Pruebas_crear_usuarios,dc=uniss,dc=edu,dc=cu`;
         ldapClient.add(dn, user, (err) => __awaiter(void 0, void 0, void 0, function* () {
             if (err) {
                 console.error("Error al crear el usuario en LDAP:", err);

@@ -11,13 +11,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSolicitud = exports.deleteSolicitud = exports.updateSolicitud = exports.getSolicitudes = exports.crearSolicitud = void 0;
 const solicitud_1 = require("../entities/solicitud");
+const solicitante_1 = require("../entities/solicitante");
 const crearSolicitud = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { fundamentacion, responsableId, solicitantes } = req.body;
         const solicitud = new solicitud_1.Solicitud();
         solicitud.fundamentacion = fundamentacion;
         solicitud.responsableId = responsableId;
-        solicitud.solicitantes = solicitantes;
+        // Cargar los solicitantes desde la base de datos
+        const solicitantesEntities = yield solicitante_1.Solicitante.findByIds(solicitantes);
+        solicitud.solicitantes = solicitantesEntities;
         yield solicitud.save();
         return res.json(solicitud);
     }

@@ -1,21 +1,25 @@
 import { Request, Response } from "express"
 import { Solicitud } from "../entities/solicitud"
+import { Solicitante } from "../entities/solicitante";
 
 
 export const crearSolicitud = async (req: Request, res: Response) => {
     try {
-        const { fundamentacion, responsableId, solicitantes } = req.body
-        const solicitud = new Solicitud()
+        const { fundamentacion, responsableId, solicitantes } = req.body;
+        const solicitud = new Solicitud();
 
-        solicitud.fundamentacion = fundamentacion
+        solicitud.fundamentacion = fundamentacion;
         solicitud.responsableId = responsableId;
-        solicitud.solicitantes = solicitantes;
 
-        await solicitud.save()
-        return res.json(solicitud)
+        // Cargar los solicitantes desde la base de datos
+        const solicitantesEntities = await Solicitante.findByIds(solicitantes);
+        solicitud.solicitantes = solicitantesEntities;
+
+        await solicitud.save();
+        return res.json(solicitud);
     } catch (error) {
         if (error instanceof Error)
-            return res.status(500).json({ message: error.message })
+            return res.status(500).json({ message: error.message });
     }
 }
 
