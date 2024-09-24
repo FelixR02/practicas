@@ -172,7 +172,7 @@ export const crearUsuarioDesdeSolicitante = async (req: Request, res: Response) 
       sn: apellido_1 + " " + apellido_2,
       uid: username /*  */,
       displayName: nombre_1 /* nombre que muestra al usuario */,
-      title: "estudiante" /* rol */,
+      title: title /* rol */,
       l: "Sancti Spiritus", // Ciudad o localidad
       st: "Sancti Spiritus", // provincia
       c: "Cuba", // pais
