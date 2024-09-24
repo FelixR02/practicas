@@ -1,5 +1,5 @@
 import {Router} from 'express';
-import { buscarUsuarioEnLDAP, crearUsuarioDesdeSolicitante, } from '../connAC'; // Asegúrate de ajustar la ruta al archivo correcto
+import { crearUsuarioDesdeSolicitante, } from '../connAC'; // Asegúrate de ajustar la ruta al archivo correcto
 
 const router = Router();
 
@@ -7,7 +7,7 @@ const router = Router();
 
 router.post('/crear-usuario', crearUsuarioDesdeSolicitante);
 
-router.get('/buscar-usuario/:username', buscarUsuarioEnLDAP);
+
 
 
 export default router;

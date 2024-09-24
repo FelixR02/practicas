@@ -15,7 +15,7 @@ const categoria_1 = require("../entities/categoria");
 const responsable_1 = require("../entities/responsable");
 const crearSolicitante = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { nombre_1, nombre_2, apellido_1, apellido_2, categoriaId, responsableId } = req.body;
+        const { nombre_1, nombre_2, apellido_1, apellido_2, fundamentacion, categoriaId, responsableId } = req.body;
         // Busca la categoría por ID
         const categoria = yield categoria_1.Categoria.findOneBy({ id: categoriaId });
         if (!categoria) {
@@ -32,6 +32,7 @@ const crearSolicitante = (req, res) => __awaiter(void 0, void 0, void 0, functio
         solicitud.apellido_2 = apellido_2;
         solicitud.categoria = categoria; // Asigna la categoría al solicitante
         solicitud.responsable = responsable;
+        solicitud.fundamentacion = fundamentacion;
         yield solicitud.save();
         return res.json(solicitud);
     }
@@ -55,7 +56,7 @@ exports.getSolicitantes = getSolicitantes;
 const updateSolicitante = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const { nombre_1, nombre_2, apellido_1, apellido_2, categoriaId } = req.body;
+        const { nombre_1, nombre_2, apellido_1, apellido_2, fundamentacion, categoriaId } = req.body;
         const solicitante = yield solicitud_1.Solicitud.findOneBy({ id: parseInt(id) });
         if (!solicitante) {
             return res.status(404).json({ message: "No existe el solicitante" });
@@ -66,6 +67,8 @@ const updateSolicitante = (req, res) => __awaiter(void 0, void 0, void 0, functi
             solicitante.nombre_2 = nombre_2;
         if (apellido_1)
             solicitante.apellido_1 = apellido_1;
+        if (fundamentacion)
+            solicitante.fundamentacion = fundamentacion;
         if (apellido_2)
             solicitante.apellido_2 = apellido_2;
         if (categoriaId) {

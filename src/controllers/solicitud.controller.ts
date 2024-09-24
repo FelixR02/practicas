@@ -7,7 +7,7 @@ import { Responsable } from "../entities/responsable"
 
 export const crearSolicitante = async (req: Request, res: Response) => {
     try {
-        const { nombre_1, nombre_2, apellido_1, apellido_2, categoriaId,responsableId } = req.body
+        const { nombre_1, nombre_2, apellido_1, apellido_2, fundamentacion ,categoriaId,responsableId } = req.body
 
         // Busca la categoría por ID
         const categoria = await Categoria.findOneBy({ id: categoriaId });
@@ -31,6 +31,7 @@ export const crearSolicitante = async (req: Request, res: Response) => {
         solicitud.apellido_2 = apellido_2
         solicitud.categoria = categoria; // Asigna la categoría al solicitante
         solicitud.responsable= responsable;
+        solicitud.fundamentacion= fundamentacion;
 
 
         await solicitud.save()
@@ -54,7 +55,7 @@ export const getSolicitantes = async (req: Request, res: Response) => {
 export const updateSolicitante = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { nombre_1, nombre_2, apellido_1, apellido_2, categoriaId } = req.body;
+        const { nombre_1, nombre_2, apellido_1, apellido_2, fundamentacion,categoriaId } = req.body;
 
         const solicitante = await Solicitud.findOneBy({ id: parseInt(id) });
         if (!solicitante) {
@@ -64,6 +65,7 @@ export const updateSolicitante = async (req: Request, res: Response) => {
         if (nombre_1) solicitante.nombre_1 = nombre_1;
         if (nombre_2) solicitante.nombre_2 = nombre_2;
         if (apellido_1) solicitante.apellido_1 = apellido_1;
+        if (fundamentacion) solicitante.fundamentacion = fundamentacion;
         if (apellido_2) solicitante.apellido_2 = apellido_2;
         if (categoriaId) {
             const categoria = await Categoria.findOneBy({ id: categoriaId });
