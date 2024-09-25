@@ -36,9 +36,13 @@ const connectLDAP = () => __awaiter(void 0, void 0, void 0, function* () {
     });
 });
 // Función para obtener un solicitante desde la base de datos
+// Función para obtener un solicitante desde la base de datos
 const findSolicitanteById = (id) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const solicitud = yield solicitud_1.Solicitud.findOneBy({ id });
+        const solicitud = yield solicitud_1.Solicitud.findOne({
+            where: { id },
+            relations: ["categoria"], // Cargar la relación con Categoria
+        });
         return solicitud;
     }
     catch (error) {
@@ -91,13 +95,16 @@ const buscarUsuario = (ldapClient, fullName) => __awaiter(void 0, void 0, void 0
 });
 // Función para crear un usuario en LDAP usando datos del solicitante
 const crearUsuarioDesdeSolicitante = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id, tipoUsuario } = req.body; // tipoUsuario puede ser "estudiante" o "trabajador"
+    const { id } = req.body; // tipoUsuario puede ser "estudiante" o "trabajador"
     try {
         const solicitud = yield (0, exports.findSolicitanteById)(Number(id));
         if (!solicitud) {
             return res.status(404).json({ message: `Solicitud con ID ${id} no encontrado` });
         }
-        const { nombre_1, nombre_2, apellido_1, apellido_2 } = solicitud;
+        const { nombre_1, nombre_2, apellido_1, apellido_2, categoria } = solicitud;
+        if (!categoria || !categoria.id) {
+            return res.status(400).json({ message: "Categoría de la solicitud no válida o no definida" });
+        }
         const fullName = `${nombre_1} ${nombre_2 ? nombre_2 + " " : ""}${apellido_1} ${apellido_2}`;
         const combinaciones = [
             `${nombre_1.charAt(0).toLowerCase()}${apellido_1.toLowerCase()}`,
@@ -133,14 +140,14 @@ const crearUsuarioDesdeSolicitante = (req, res) => __awaiter(void 0, void 0, voi
             }
             username = `${username}${suffix}`;
         }
-        const invalidChars = /[,\=\+<>#;\\"]/;
+        const invalidChars = /[,=+<>#;\\"]/;
         if (invalidChars.test(username)) {
             throw new Error(`El nombre de usuario contiene caracteres no válidos: ${username}`);
         }
         const cn = `${nombre_1} ${nombre_2 ? nombre_2 + " " : ""}${apellido_1} ${apellido_2}`;
         let title = "";
         let ou = "";
-        switch (tipoUsuario) {
+        switch (categoria.id) {
             case 1:
                 title = "Estudiante";
                 ou = "Estudiantes";
@@ -162,10 +169,8 @@ const crearUsuarioDesdeSolicitante = (req, res) => __awaiter(void 0, void 0, voi
             sn: apellido_1 + " " + apellido_2,
             uid: username /*  */,
             displayName: nombre_1 /* nombre que muestra al usuario */,
-            title: "estudiante" /* rol */,
-            l: "Sancti Spiritus", // Ciudad o localidad
-            st: "Sancti Spiritus", // provincia
-            c: "Cuba", // pais
+            title: title /* rol */,
+            l: "Sancti Spiritus" /*lugar de origen  */,
             postalCode: "50100",
             /* mail: `${username}@uniss.edu.cu`, */
             objectClass: "inetOrgPerson",
@@ -194,9 +199,7 @@ const crearUsuarioDesdeSolicitante = (req, res) => __awaiter(void 0, void 0, voi
             else {
                 console.log(`Usuario creado en LDAP con username: ${username} y solicitanteId: ${solicitud.id}`);
                 const responsableRepository = db_1.AppDataSource.getRepository(responsable_1.Responsable);
-                const responsable = yield responsableRepository.findOne({
-                    where: { id: solicitud.id },
-                });
+                const responsable = yield responsableRepository.findOne({ where: { id: solicitud.id } });
                 if (responsable) {
                     const asunto = "Nuevo Usuario Creado";
                     const texto = `Se ha creado un nuevo usuario en LDAP con el nombre de usuario: ${username}`;
